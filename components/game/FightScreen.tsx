@@ -52,6 +52,7 @@ export default function FightScreen() {
   const net = useRef<NetSession | null>(null);
   const pendingNetEvents = useRef<FightEvent[]>([]);
   const latestSnap = useRef<NetSnapshot | null>(null);
+  const lastSnapAt = useRef(0);
 
   const isOnline = hud.mode === 'online';
   const isAuthority = !isOnline || hud.netRole === 'host';
@@ -283,6 +284,7 @@ export default function FightScreen() {
           break;
         case 'state': {
           // гость: применяем снапшот
+          lastSnapAt.current = performance.now();
           latestSnap.current = msg.snap;
           const prev = { ann: s.announcement, sub: s.subtitle };
           s.set({
@@ -322,7 +324,8 @@ export default function FightScreen() {
       const session = await NetSession.host();
       net.current = session;
       s.set({ netCode: session.code });
-      session.onPeerConnected = () => useHud.getState().set({ netStatus: 'connected' });
+      session.onPeerConnected = () =>
+        useHud.getState().set({ netStatus: 'connected', netTransport: session.transport });
       session.onPeerLost = () => {
         useHud.getState().set({ netStatus: 'error', netError: 'Соперник отключился', phase: 'select' });
       };
@@ -339,7 +342,7 @@ export default function FightScreen() {
       try {
         const session = await NetSession.join(code);
         net.current = session;
-        s.set({ netStatus: 'connected' });
+        s.set({ netStatus: 'connected', netTransport: session.transport });
         session.onPeerLost = () => {
           useHud.getState().set({ netStatus: 'error', netError: 'Соединение потеряно', phase: 'select' });
         };
@@ -362,13 +365,43 @@ export default function FightScreen() {
     }
   }, []);
 
-  // гость шлёт свои инпуты 30 раз в секунду
+  // гость шлёт инпуты ТОЛЬКО при изменении (+ редкий повтор удержания):
+  // публичный MQTT-брокер банит клиентов за флуд 30 сообщений/с,
+  // после чего молча дропает всё — «подключилось, но не играет».
   useEffect(() => {
     if (!isOnline || hud.netRole !== 'guest' || hud.netStatus !== 'connected') return;
+    let lastMove = '';
+    let lastSentAt = 0;
     const id = setInterval(() => {
+      const phase = useHud.getState().phase;
+      if (phase === 'select' || phase === 'matchEnd') return;
       const input = guestInputCtrl.current.snapshotInput();
+      const hasAttack = input.punch || input.kick || input.special;
+      const move = `${input.left}|${input.right}`;
+      const now = performance.now();
+      const holdRefresh = move !== 'false|false' && now - lastSentAt > 400;
+      if (!hasAttack && move === lastMove && !holdRefresh) return;
+      lastMove = move;
+      lastSentAt = now;
       net.current?.send({ type: 'input', input });
     }, 33);
+    return () => clearInterval(id);
+  }, [isOnline, hud.netRole, hud.netStatus]);
+
+  // watchdog гостя: lwt-bye мы игнорируем (хост мог просто моргнуть сокетом),
+  // но если снапшоты реально перестали идти в бою — честно сообщаем об обрыве
+  useEffect(() => {
+    if (!isOnline || hud.netRole !== 'guest' || hud.netStatus !== 'connected') return;
+    lastSnapAt.current = performance.now();
+    const id = setInterval(() => {
+      const s = useHud.getState();
+      if (s.phase === 'select') return;
+      if (performance.now() - lastSnapAt.current > 15000) {
+        net.current?.destroy();
+        net.current = null;
+        s.set({ netStatus: 'error', netError: 'Связь с хостом потеряна — пересоздайте комнату', phase: 'select' });
+      }
+    }, 3000);
     return () => clearInterval(id);
   }, [isOnline, hud.netRole, hud.netStatus]);
 
@@ -437,6 +470,7 @@ export default function FightScreen() {
       netStatus: 'idle',
       netCode: '',
       netError: '',
+      netTransport: '',
       mode: 'pvp',
     });
   }, []);
@@ -874,10 +908,12 @@ function GameLoop({
       simB.current.stateT += dt;
     }
 
-    // трансляция снапшотов гостю (в любой фазе — чтобы синхронились интро/итоги)
+    // трансляция снапшотов гостю (в любой фазе — чтобы синхронились интро/итоги).
+    // через релей — 8Гц (публичный брокер банит за флуд), напрямую — 30Гц
     if (net.current?.connected && s.mode === 'online') {
+      const sendInterval = net.current.transport === 'relay' ? 0.2 : NET_SEND_INTERVAL;
       sendAccum.current += delta;
-      if (sendAccum.current >= NET_SEND_INTERVAL) {
+      if (sendAccum.current >= sendInterval) {
         sendAccum.current = 0;
         const events = pendingNetEvents.current.splice(0, pendingNetEvents.current.length);
         const pick = (f: FighterSim) => ({ x: f.x, facing: f.facing, hp: f.hp, state: f.state, stateT: f.stateT });

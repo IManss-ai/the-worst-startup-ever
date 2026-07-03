@@ -26,7 +26,7 @@ export default function CharacterSelect({
   onJoin: (code: string) => void;
   onPickOnline: (id: string) => void;
 }) {
-  const { p1Id, p2Id, mode, netRole, netCode, netStatus, netError, set } = useHud();
+  const { p1Id, p2Id, mode, netRole, netCode, netStatus, netError, netTransport, set } = useHud();
   const [joinCode, setJoinCode] = useState('');
 
   const isOnline = mode === 'online';
@@ -149,7 +149,10 @@ export default function CharacterSelect({
           )}
           {netStatus === 'connected' && (
             <div>
-              <p className="text-sm font-bold text-green-400">✓ Соединение установлено · комната {netCode}</p>
+              <p className="text-sm font-bold text-green-400">
+                ✓ Соединение установлено · комната {netCode} ·{' '}
+                {netTransport === 'relay' ? 'через релей (обходим изоляцию Wi-Fi)' : 'напрямую (P2P)'}
+              </p>
               <p className="mt-1 text-xs text-white/60">
                 Вы — {netRole === 'host' ? 'синий угол (P1)' : 'красный угол (P2)'}. Выберите своего бойца.
                 {netRole === 'host' ? ' Бой начинаете вы.' : ' Бой начнёт хост.'}

@@ -11,6 +11,7 @@ interface HudState {
   netCode: string;
   netStatus: NetStatus;
   netError: string;
+  netTransport: '' | 'p2p' | 'relay';
   p1Id: string | null;
   p2Id: string | null;
   hp1: number;
@@ -32,6 +33,7 @@ export const useHud = create<HudState>((set) => ({
   netCode: '',
   netStatus: 'idle',
   netError: '',
+  netTransport: '',
   p1Id: null,
   p2Id: null,
   hp1: 100,

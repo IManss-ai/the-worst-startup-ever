@@ -47,3 +47,4 @@ npm run dev        # http://localhost:3000
 npm run build      # прод-сборка
 vercel deploy --prod --yes
 ```
+# nfac-hack

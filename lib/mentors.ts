@@ -33,7 +33,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'asel',
-    hasPhoto: false,
+    hasPhoto: true,
     name: 'АСЕЛЬ',
     title: 'Product Visionary',
     special: 'Roadmap Rage',

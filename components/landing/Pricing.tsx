@@ -13,6 +13,7 @@ const tiers = [
       "Базовые фаталити",
     ],
     cta: "Начать бесплатно",
+    href: "/fight",
     highlight: false,
   },
   {
@@ -28,6 +29,7 @@ const tiers = [
       "Нотариально заверенный* протокол боя",
     ],
     cta: "Выбрать Pro",
+    href: "/checkout?plan=pro",
     highlight: true,
   },
   {
@@ -43,6 +45,7 @@ const tiers = [
       "Королевская битва до 8 адвайзеров",
     ],
     cta: "Связаться с продажами",
+    href: "/checkout?plan=enterprise",
     highlight: false,
   },
 ];
@@ -98,7 +101,7 @@ export default function Pricing() {
               </ul>
 
               <Link
-                href="/fight"
+                href={t.href}
                 className={`mt-10 block px-6 py-3.5 text-center font-display text-xs font-bold uppercase tracking-widest transition-all ${
                   t.highlight
                     ? "bg-blood text-white hover:bg-ember hover:shadow-[0_0_30px_rgba(255,46,61,0.45)]"

@@ -10,9 +10,9 @@ export default function Pain() {
         </h2>
         <div className="mt-8 grid gap-8 sm:grid-cols-[1fr_auto] sm:items-end">
           <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            «Пивот» в понедельник. «Фокус» во вторник. «Поднимайте раунд» и «не
-            размывайтесь» — в один и тот же office hour. Это боль. Мы её
-            оцифровали, отрендерили и добавили hit-боксы.
+            В понедельник вам советуют пивот, во вторник фокус, а «поднимайте
+            раунд» и «не размывайтесь» умещаются в один office hour. Мы
+            оцифровали эту боль и добавили ей hit-боксы.
           </p>
           <p className="font-display text-5xl font-extrabold text-blood/90 sm:text-7xl">
             40&nbsp;000

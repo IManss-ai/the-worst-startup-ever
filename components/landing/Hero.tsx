@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroDuelSlot from "@/components/landing/HeroDuelSlot";
 
 const trusted = [
   "PivotLabs",
@@ -34,7 +35,7 @@ export default function Hero() {
         <div className="rise mx-auto flex w-fit items-center gap-2 border border-line bg-panel px-4 py-1.5">
           <span className="h-1.5 w-1.5 bg-blood" />
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            Series A · Combat Engine v3.1 · Алматы
+            nFactorial presents · Combat Engine v3.1 · Алматы
           </span>
         </div>
 
@@ -53,9 +54,9 @@ export default function Hero() {
           className="rise mx-auto mt-8 max-w-2xl text-center text-base leading-relaxed text-muted sm:text-lg"
           style={{ animationDelay: "0.22s" }}
         >
-          MESH — первая в мире платформа разрешения менторских конфликтов.
-          Менторы дерутся в 3D. Совет победителя становится юридически
-          обязательным.
+          HELL KOMBAT — первая в мире платформа разрешения менторских
+          конфликтов. Менторы дерутся в 3D. Совет победителя становится
+          юридически обязательным.
         </p>
 
         <div
@@ -76,49 +77,27 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* VS panel */}
+        {/* Live 3D duel — CSS VS panel renders while the scene loads */}
         <div
-          className="rise mx-auto mt-16 max-w-3xl border border-line bg-panel/80 p-5 shadow-[0_0_80px_rgba(255,46,61,0.08)] sm:p-8"
+          className="rise mx-auto mt-16 max-w-3xl"
           style={{ animationDelay: "0.46s" }}
         >
-          <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-muted sm:text-xs">
-            <span>Раунд 1 из 1</span>
-            <span className="text-blood">Live-рендеринг</span>
-          </div>
+          <HeroDuelSlot />
+        </div>
 
-          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
-            <div>
-              <p className="truncate font-display text-xs font-bold uppercase tracking-wider sm:text-sm">
-                Ментор «Пивот»
-              </p>
-              <div className="mt-2 h-3 border border-line bg-background p-[2px]">
-                <div className="hp-left h-full bg-gradient-to-r from-ember to-blood" />
-              </div>
-              <p className="mt-2 hidden font-mono text-[10px] text-muted sm:block">
-                «Рынок сместился. Пивотнитесь.»
-              </p>
-            </div>
-
-            <span className="vs-flicker font-display text-3xl font-extrabold text-blood sm:text-5xl">
-              VS
-            </span>
-
-            <div className="text-right">
-              <p className="truncate font-display text-xs font-bold uppercase tracking-wider sm:text-sm">
-                Ментор «Фокус»
-              </p>
-              <div className="mt-2 h-3 border border-line bg-background p-[2px]">
-                <div className="hp-right ml-auto h-full bg-gradient-to-l from-ember to-blood" />
-              </div>
-              <p className="mt-2 hidden font-mono text-[10px] text-muted sm:block">
-                «Не распыляйтесь. Фокус.»
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-6 border-t border-line pt-4 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-muted sm:text-xs">
-            Победивший совет исполняется без обсуждений
-          </p>
+        {/* Online mode callout */}
+        <div
+          className="rise mx-auto mt-8 flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border border-line bg-panel/70 px-5 py-3"
+          style={{ animationDelay: "0.58s" }}
+        >
+          <span className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blood">
+            <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-green-400" />
+            Новое · Онлайн-режим
+          </span>
+          <span className="text-sm text-muted">
+            каждый ментор дерётся со своего ноутбука — room code вместо
+            переговорки
+          </span>
         </div>
 
         {/* Trust strip */}

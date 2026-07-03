@@ -1,11 +1,16 @@
 import { create } from 'zustand';
 
 export type GamePhase = 'select' | 'intro' | 'fight' | 'roundEnd' | 'matchEnd';
-export type GameMode = 'pvp' | 'cpu' | 'auto';
+export type GameMode = 'pvp' | 'cpu' | 'auto' | 'online';
+export type NetStatus = 'idle' | 'hosting' | 'joining' | 'connected' | 'error';
 
 interface HudState {
   phase: GamePhase;
   mode: GameMode;
+  netRole: 'host' | 'guest' | null;
+  netCode: string;
+  netStatus: NetStatus;
+  netError: string;
   p1Id: string | null;
   p2Id: string | null;
   hp1: number;
@@ -23,6 +28,10 @@ interface HudState {
 export const useHud = create<HudState>((set) => ({
   phase: 'select',
   mode: 'pvp',
+  netRole: null,
+  netCode: '',
+  netStatus: 'idle',
+  netError: '',
   p1Id: null,
   p2Id: null,
   hp1: 100,

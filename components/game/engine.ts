@@ -66,6 +66,7 @@ export interface FightEvent {
   attacker: 0 | 1;
   kind: AttackKind;
   damage?: number;
+  x?: number; // мировая X-координата события (для партиклов/попапов)
 }
 
 export function createFighter(side: 0 | 1): FighterSim {
@@ -129,11 +130,11 @@ function tickFighter(
         f.attackLanded = true;
         foe.hp = Math.max(0, foe.hp - spec.damage);
         foe.x += f.facing * spec.knockback;
-        events.push({ type: 'hit', attacker: side, kind: f.attack, damage: spec.damage });
+        events.push({ type: 'hit', attacker: side, kind: f.attack, damage: spec.damage, x: foe.x });
         if (foe.hp <= 0) {
           setState(foe, 'ko');
           foe.attack = null;
-          events.push({ type: 'ko', attacker: side, kind: f.attack });
+          events.push({ type: 'ko', attacker: side, kind: f.attack, x: foe.x });
         } else {
           setState(foe, 'hit');
           foe.attack = null;
@@ -153,7 +154,7 @@ function tickFighter(
     f.attackLanded = false;
     f.specialCooldown = ATTACKS.special.cooldown;
     setState(f, 'special');
-    events.push({ type: 'whoosh', attacker: side, kind: 'special' });
+    events.push({ type: 'whoosh', attacker: side, kind: 'special', x: f.x });
     return;
   }
   if (input.punch) {
@@ -215,32 +216,90 @@ export interface Controller {
   read(self: FighterSim, foe: FighterSim, dt: number): ActionInput;
 }
 
+export type KeyMap = {
+  left: string[];
+  right: string[];
+  punch: string[];
+  kick: string[];
+  special: string[];
+};
+
+// Раскладки: у каждого действия может быть несколько клавиш (WASD и стрелки разом).
+export const KEYMAP_P1: KeyMap = { left: ['KeyA'], right: ['KeyD'], punch: ['KeyF'], kick: ['KeyG'], special: ['KeyH'] };
+export const KEYMAP_P2: KeyMap = { left: ['ArrowLeft'], right: ['ArrowRight'], punch: ['KeyK'], kick: ['KeyL'], special: ['Semicolon'] };
+// Одиночная раскладка (свой ноутбук): и WASD, и стрелки
+export const KEYMAP_SOLO: KeyMap = {
+  left: ['KeyA', 'ArrowLeft'],
+  right: ['KeyD', 'ArrowRight'],
+  punch: ['KeyF', 'KeyK'],
+  kick: ['KeyG', 'KeyL'],
+  special: ['KeyH', 'Semicolon', 'Space'],
+};
+
 export class KeyboardController implements Controller {
   private pressed = new Set<string>();
   private edge = new Set<string>(); // кнопки-атаки срабатывают по нажатию, не удержанию
 
-  constructor(
-    private keys: { left: string; right: string; punch: string; kick: string; special: string },
-  ) {}
+  constructor(private keys: KeyMap) {}
 
   handleKey(code: string, down: boolean) {
-    const all = Object.values(this.keys);
+    const all = Object.values(this.keys).flat();
     if (!all.includes(code)) return;
     if (down && !this.pressed.has(code)) this.edge.add(code);
     if (down) this.pressed.add(code);
     else this.pressed.delete(code);
   }
 
+  private has(set: Set<string>, codes: string[]): boolean {
+    return codes.some((c) => set.has(c));
+  }
+
   read(): ActionInput {
     const input: ActionInput = {
-      left: this.pressed.has(this.keys.left),
-      right: this.pressed.has(this.keys.right),
-      punch: this.edge.has(this.keys.punch),
-      kick: this.edge.has(this.keys.kick),
-      special: this.edge.has(this.keys.special),
+      left: this.has(this.pressed, this.keys.left),
+      right: this.has(this.pressed, this.keys.right),
+      punch: this.has(this.edge, this.keys.punch),
+      kick: this.has(this.edge, this.keys.kick),
+      special: this.has(this.edge, this.keys.special),
     };
     this.edge.clear();
     return input;
+  }
+
+  // текущее «сырое» состояние для отправки по сети (атаки — по фронту)
+  snapshotInput(): ActionInput {
+    return this.read();
+  }
+}
+
+// Контроллер, который кормится инпутами гостя из сети.
+// Атаки аккумулируются (не теряем фронт между кадрами хоста).
+export class NetRemoteController implements Controller {
+  private move: Pick<ActionInput, 'left' | 'right'> = { left: false, right: false };
+  private pendingPunch = false;
+  private pendingKick = false;
+  private pendingSpecial = false;
+
+  push(input: ActionInput) {
+    this.move.left = input.left;
+    this.move.right = input.right;
+    if (input.punch) this.pendingPunch = true;
+    if (input.kick) this.pendingKick = true;
+    if (input.special) this.pendingSpecial = true;
+  }
+
+  read(): ActionInput {
+    const out: ActionInput = {
+      left: this.move.left,
+      right: this.move.right,
+      punch: this.pendingPunch,
+      kick: this.pendingKick,
+      special: this.pendingSpecial,
+    };
+    this.pendingPunch = false;
+    this.pendingKick = false;
+    this.pendingSpecial = false;
+    return out;
   }
 }
 

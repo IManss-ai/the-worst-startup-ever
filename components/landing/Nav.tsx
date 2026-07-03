@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const links = [
-  { href: "#how", label: "Как это работает" },
+  { href: "#how", label: "Продукт" },
   { href: "#pricing", label: "Тарифы" },
   { href: "#faq", label: "FAQ" },
 ];
@@ -32,6 +32,9 @@ export default function Nav() {
             <span className="mt-0.5 font-display text-base font-bold tracking-[0.1em]">
               NFAC KOMBAT
             </span>
+          </span>
+          <span className="ml-1 hidden border border-blood/40 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-blood sm:inline-block">
+            Series A
           </span>
         </Link>
 

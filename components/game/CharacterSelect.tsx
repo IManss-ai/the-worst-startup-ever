@@ -259,10 +259,8 @@ export default function CharacterSelect({
           {isOnline && netRole === 'guest' ? 'Ждём хоста' : 'В бой →'}
         </button>
       </div>
-      <p className="text-[11px] text-white/35">
-        {isOnline
-          ? 'Каждый на своём ноутбуке: A/D или ←/→ — движение · F — удар · G — пинок · H или пробел — спешл'
-          : 'P1: A/D + F/G/H · P2: ←/→ + K/L/; · Спешл — с кулдауном 4с'}
+      <p className="text-sm text-white/55">
+        Кнопки запоминать не нужно — крупная шпаргалка появится прямо перед боем.
       </p>
     </div>
   );

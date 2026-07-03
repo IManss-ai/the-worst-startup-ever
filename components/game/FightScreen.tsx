@@ -113,6 +113,8 @@ export default function FightScreen() {
       finishHimShown: false,
     });
     announce(`Раунд ${round}`);
+    // первый раунд длиннее: на экране висит крупная шпаргалка управления
+    const introDelay = round === 1 ? 3600 : 1400;
     setTimeout(() => {
       if (useHud.getState().phase !== 'intro') return;
       useHud.getState().set({ announcement: 'БОЙ!', phase: 'fight' });
@@ -120,7 +122,7 @@ export default function FightScreen() {
       setTimeout(() => {
         if (useHud.getState().phase === 'fight') useHud.getState().set({ announcement: '' });
       }, 900);
-    }, 1400);
+    }, introDelay);
   }, []);
 
   const startMatch = useCallback(() => {
@@ -574,32 +576,171 @@ export default function FightScreen() {
         </div>
       )}
 
-      {/* нижняя панель */}
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-3 text-[11px] text-white/30">
+      {/* шпаргалка управления во время интро */}
+      {hud.phase === 'intro' && <ControlsSplash mode={hud.mode} netRole={hud.netRole} p1Name={p1.name} p2Name={p2.name} />}
+
+      {/* нижняя панель управления */}
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
         <button
           onClick={backToSelect}
-          className="pointer-events-auto rounded border border-white/10 px-3 py-1.5 uppercase tracking-wider hover:text-white/70"
+          className="pointer-events-auto rounded border border-white/10 px-3 py-1.5 text-[11px] uppercase tracking-wider text-white/30 hover:text-white/70"
         >
           ← выбор
         </button>
-        <p className="hidden sm:block">
-          {hud.mode === 'pvp'
-            ? 'P1: A/D + F/G/H · P2: ←/→ + K/L/;'
-            : hud.mode === 'cpu'
-              ? 'Вы: A/D или ←/→ + F/G/H'
-              : hud.mode === 'online'
-                ? `ОНЛАЙН · комната ${hud.netCode} · вы — ${hud.netRole === 'host' ? p1.name : p2.name} · A/D или ←/→ + F/G/H (спешл — пробел)`
-                : 'Менторы дерутся сами. Вмешательство не требуется.'}
-        </p>
+        <ControlsBar mode={hud.mode} netRole={hud.netRole} netCode={hud.netCode} />
         {hud.mode !== 'auto' && hud.mode !== 'online' && hud.phase !== 'matchEnd' && (
           <button
             onClick={engageAuto}
-            className="pointer-events-auto rounded border border-amber-500/40 px-3 py-1.5 font-bold uppercase tracking-wider text-amber-400 hover:bg-amber-500/10"
+            className="pointer-events-auto rounded border border-amber-500/40 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-400 hover:bg-amber-500/10"
           >
             AUTO
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// Клавиша-кейкап: крупная, читается с проектора
+function Key({ children, color }: { children: React.ReactNode; color?: string }) {
+  return (
+    <kbd
+      className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-white/30 bg-white/10 px-2 font-mono text-sm font-black text-white shadow-[0_3px_0_rgba(255,255,255,0.25)]"
+      style={color ? { borderColor: color, boxShadow: `0 3px 0 ${color}66` } : undefined}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+function KeyRow({ keys, label, color }: { keys: string[]; label: string; color?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-1">
+        {keys.map((k) => (
+          <Key key={k} color={color}>
+            {k}
+          </Key>
+        ))}
+      </div>
+      <span className="text-sm font-bold uppercase tracking-wide text-white/80">{label}</span>
+    </div>
+  );
+}
+
+// Большая шпаргалка на интро первого раунда — «какие кнопки жать»
+function ControlsSplash({
+  mode,
+  netRole,
+  p1Name,
+  p2Name,
+}: {
+  mode: string;
+  netRole: 'host' | 'guest' | null;
+  p1Name: string;
+  p2Name: string;
+}) {
+  const soloCard = (title: string, color: string) => (
+    <div className="rounded-xl border-2 bg-black/80 p-5 backdrop-blur" style={{ borderColor: color }}>
+      <p className="mb-3 text-center text-sm font-black uppercase tracking-widest" style={{ color }}>
+        {title}
+      </p>
+      <div className="flex flex-col gap-2.5">
+        <KeyRow keys={['A', 'D']} label="движение (или ← →)" color={color} />
+        <KeyRow keys={['F']} label="удар" color={color} />
+        <KeyRow keys={['G']} label="пинок" color={color} />
+        <KeyRow keys={['H']} label="спешл (или пробел)" color={color} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center px-4">
+      <div className="flex flex-wrap justify-center gap-4">
+        {mode === 'pvp' && (
+          <>
+            <div className="rounded-xl border-2 border-blue-400 bg-black/80 p-5 backdrop-blur">
+              <p className="mb-3 text-center text-sm font-black uppercase tracking-widest text-blue-300">{p1Name} — игрок 1</p>
+              <div className="flex flex-col gap-2.5">
+                <KeyRow keys={['A', 'D']} label="движение" color="#0a84ff" />
+                <KeyRow keys={['F']} label="удар" color="#0a84ff" />
+                <KeyRow keys={['G']} label="пинок" color="#0a84ff" />
+                <KeyRow keys={['H']} label="спешл" color="#0a84ff" />
+              </div>
+            </div>
+            <div className="rounded-xl border-2 border-red-400 bg-black/80 p-5 backdrop-blur">
+              <p className="mb-3 text-center text-sm font-black uppercase tracking-widest text-red-300">{p2Name} — игрок 2</p>
+              <div className="flex flex-col gap-2.5">
+                <KeyRow keys={['←', '→']} label="движение" color="#ff2d55" />
+                <KeyRow keys={['K']} label="удар" color="#ff2d55" />
+                <KeyRow keys={['L']} label="пинок" color="#ff2d55" />
+                <KeyRow keys={[';']} label="спешл" color="#ff2d55" />
+              </div>
+            </div>
+          </>
+        )}
+        {mode === 'cpu' && soloCard(`Вы — ${p1Name}`, '#0a84ff')}
+        {mode === 'online' &&
+          (netRole === 'guest' ? soloCard(`Вы — ${p2Name}`, '#ff2d55') : soloCard(`Вы — ${p1Name}`, '#0a84ff'))}
+        {mode === 'auto' && (
+          <div className="rounded-xl border-2 border-amber-500/60 bg-black/80 px-6 py-4 backdrop-blur">
+            <p className="text-sm font-black uppercase tracking-widest text-amber-300">
+              Менторы дерутся сами. Вмешательство не требуется.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Постоянная панель управления внизу — кейкапы вместо мелкого текста
+function ControlsBar({ mode, netRole, netCode }: { mode: string; netRole: 'host' | 'guest' | null; netCode: string }) {
+  if (mode === 'auto') {
+    return (
+      <p className="pointer-events-none hidden text-[11px] uppercase tracking-wider text-white/35 sm:block">
+        Авто-режим · менторы разбираются сами
+      </p>
+    );
+  }
+  return (
+    <div className="pointer-events-none hidden items-center gap-4 rounded-lg bg-black/55 px-4 py-2 backdrop-blur sm:flex">
+      {mode === 'pvp' ? (
+        <>
+          <span className="flex items-center gap-1.5">
+            <span className="text-[10px] font-black uppercase text-blue-300">P1</span>
+            <Key color="#0a84ff">A</Key>
+            <Key color="#0a84ff">D</Key>
+            <Key color="#0a84ff">F</Key>
+            <Key color="#0a84ff">G</Key>
+            <Key color="#0a84ff">H</Key>
+          </span>
+          <span className="text-white/25">·</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-[10px] font-black uppercase text-red-300">P2</span>
+            <Key color="#ff2d55">←</Key>
+            <Key color="#ff2d55">→</Key>
+            <Key color="#ff2d55">K</Key>
+            <Key color="#ff2d55">L</Key>
+            <Key color="#ff2d55">;</Key>
+          </span>
+        </>
+      ) : (
+        <span className="flex items-center gap-1.5">
+          <span className="text-[10px] font-black uppercase text-white/50">
+            {mode === 'online' ? `комната ${netCode} · вы ${netRole === 'guest' ? 'P2' : 'P1'}` : 'вы'}
+          </span>
+          <Key>A</Key>
+          <Key>D</Key>
+          <span className="text-[10px] uppercase text-white/40">ход</span>
+          <Key>F</Key>
+          <span className="text-[10px] uppercase text-white/40">удар</span>
+          <Key>G</Key>
+          <span className="text-[10px] uppercase text-white/40">пинок</span>
+          <Key>H</Key>
+          <span className="text-[10px] uppercase text-white/40">спешл</span>
+        </span>
+      )}
     </div>
   );
 }

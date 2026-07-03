@@ -14,6 +14,8 @@ export default async function CheckoutPage({
 }) {
   const { plan } = await searchParams;
   const resolved: Plan =
-    plan === "free" || plan === "enterprise" ? plan : "pro";
+    plan === "free" || plan === "starter" || plan === "enterprise"
+      ? plan
+      : "pro";
   return <Checkout plan={resolved} />;
 }

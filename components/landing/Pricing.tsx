@@ -10,17 +10,31 @@ const tiers = [
       "1 бой в неделю",
       "Рендеринг 720p — менторы слегка похожи на себя",
       "Совет победителя — только устно",
-      "Базовые фаталити",
     ],
     cta: "Начать бесплатно",
     href: "/fight",
     highlight: false,
   },
   {
+    name: "Starter",
+    price: "$19",
+    period: "/мес",
+    tagline: "Первое серьёзное разногласие",
+    features: [
+      "10 боёв в месяц",
+      "HD-рендеринг",
+      "Письменный протокол боя",
+      "Насилие — до 10 инцидентов/мес",
+    ],
+    cta: "Выбрать Starter",
+    href: "/checkout?plan=starter",
+    highlight: false,
+  },
+  {
     name: "Pro",
     price: "$49",
     period: "/мес",
-    tagline: "Выбор фаундеров без собственного мнения",
+    tagline: "Для фаундеров без собственного мнения",
     features: [
       "Безлимитные бои",
       "История поражений вашего ментора",
@@ -58,22 +72,22 @@ export default function Pricing() {
           Тарифы
         </p>
         <h2 className="mt-6 font-display text-2xl font-bold uppercase leading-snug sm:text-4xl">
-          Цена одного решения — дешевле одного созвона
+          Подписка дешевле одного созвона с бордом
         </h2>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {tiers.map((t) => (
             <div
               key={t.name}
-              className={`relative flex flex-col border p-8 ${
+              className={`relative flex flex-col border p-6 lg:p-7 ${
                 t.highlight
                   ? "border-blood bg-panel shadow-[0_0_60px_rgba(255,46,61,0.15)]"
                   : "border-line bg-panel/50"
               }`}
             >
               {t.highlight && (
-                <span className="absolute -top-3 left-8 bg-blood px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-                  Популярный
+                <span className="absolute -top-3 left-6 bg-blood px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                  Выбор фаундеров
                 </span>
               )}
               <h3 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-muted">
@@ -115,7 +129,8 @@ export default function Pricing() {
         </div>
 
         <p className="mt-4 font-mono text-xs text-muted">
-          *нотариус — тоже 3D-модель
+          *нотариус — тоже 3D-модель · −20% при оплате за год (совет всё равно
+          обязателен)
         </p>
       </div>
     </section>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-export type Plan = "free" | "pro" | "enterprise";
+export type Plan = "free" | "starter" | "pro" | "enterprise";
 
 /* ------------------------------------------------------------------ */
 /* Fake Kaspi QR: deterministic pseudo-random module grid (inline SVG) */
@@ -117,12 +117,27 @@ function luhnOk(cardNumber: string): boolean {
 const summaries: Record<Exclude<Plan, "free">, {
   title: string;
   price: string;
+  amount: string | null;
   items: Array<{ label: string; value: string }>;
   total: string;
 }> = {
+  starter: {
+    title: "NFAC KOMBAT Starter",
+    price: "$19/мес",
+    amount: "$19",
+    items: [
+      { label: "10 боёв в месяц", value: "$19/мес" },
+      { label: "Насилие", value: "до 10 инцидентов/мес" },
+      { label: "HD-рендеринг", value: "включено" },
+      { label: "Письменный протокол боя", value: "включено" },
+      { label: "НДС 12%", value: "уже в цене" },
+    ],
+    total: "$19/мес",
+  },
   pro: {
     title: "NFAC KOMBAT Pro",
     price: "$49/мес",
+    amount: "$49",
     items: [
       { label: "Безлимитные бои", value: "$49/мес" },
       { label: "Комиссия за насилие", value: "включено" },
@@ -135,6 +150,7 @@ const summaries: Record<Exclude<Plan, "free">, {
   enterprise: {
     title: "Enterprise · Board Edition",
     price: "по запросу",
+    amount: null,
     items: [
       { label: "Конфликты совета директоров", value: "безлимит" },
       { label: "Споры с LP", value: "безлимит" },
@@ -229,14 +245,14 @@ function ProcessingScreen() {
   );
 }
 
-function SuccessScreen() {
+function SuccessScreen({ planTitle }: { planTitle: string }) {
   return (
     <div className="mx-auto max-w-xl border border-line bg-panel/60 px-6 py-16 text-center sm:px-12">
       <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-400 text-3xl text-green-400">
         ✓
       </span>
       <h1 className="mt-8 font-display text-xl font-extrabold uppercase leading-snug sm:text-2xl">
-        Оплата прошла. NFAC KOMBAT Pro активирован.
+        Оплата прошла. {planTitle} активирован.
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         С вас также автоматически удержан 30% carry с будущих побед.
@@ -309,7 +325,13 @@ function EnterprisePanel() {
   );
 }
 
-function PaymentForm({ onSubmit }: { onSubmit: () => void }) {
+function PaymentForm({
+  amount,
+  onSubmit,
+}: {
+  amount: string;
+  onSubmit: () => void;
+}) {
   const [tab, setTab] = useState<"card" | "kaspi">("card");
   const [number, setNumber] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -411,7 +433,7 @@ function PaymentForm({ onSubmit }: { onSubmit: () => void }) {
             disabled={!cardFilled}
             className="mt-2 w-full bg-blood px-6 py-4 font-display text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-ember hover:shadow-[0_0_30px_rgba(255,46,61,0.45)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Оплатить $49
+            Оплатить {amount}
           </button>
           <p className="text-center font-mono text-[10px] text-muted">
             Мы не храним данные карты. Мы вообще ничего не храним.
@@ -458,7 +480,7 @@ export default function Checkout({ plan }: { plan: Plan }) {
         {plan === "free" ? (
           <FreeScreen />
         ) : stage === "success" ? (
-          <SuccessScreen />
+          <SuccessScreen planTitle={summaries[plan].title} />
         ) : (
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
             <OrderSummary plan={plan} />
@@ -467,7 +489,10 @@ export default function Checkout({ plan }: { plan: Plan }) {
             ) : stage === "processing" ? (
               <ProcessingScreen />
             ) : (
-              <PaymentForm onSubmit={startProcessing} />
+              <PaymentForm
+                amount={summaries[plan].amount ?? "$49"}
+                onSubmit={startProcessing}
+              />
             )}
           </div>
         )}

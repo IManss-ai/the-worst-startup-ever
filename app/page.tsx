@@ -1,5 +1,6 @@
 import Nav from "@/components/landing/Nav";
 import Hero from "@/components/landing/Hero";
+import ProductStrip from "@/components/landing/ProductStrip";
 import Pain from "@/components/landing/Pain";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Metrics from "@/components/landing/Metrics";
@@ -16,6 +17,7 @@ export default function Home() {
       <Nav />
       <main className="flex-1">
         <Hero />
+        <ProductStrip />
         <Pain />
         <HowItWorks />
         <Metrics />

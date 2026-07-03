@@ -86,6 +86,11 @@ export default function Metrics() {
 
   return (
     <section className="border-y border-line bg-panel/50">
+      <div className="mx-auto max-w-6xl px-7 pt-10">
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-blood">
+          Трекшн
+        </p>
+      </div>
       <div
         ref={ref}
         className="mx-auto grid max-w-6xl grid-cols-1 gap-px bg-line sm:grid-cols-2 lg:grid-cols-4"

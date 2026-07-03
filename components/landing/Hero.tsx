@@ -59,6 +59,14 @@ export default function Hero() {
           юридически обязательным.
         </p>
 
+        <p
+          className="rise mx-auto mt-4 max-w-2xl text-center font-mono text-[11px] uppercase tracking-[0.16em] text-foreground/55 sm:text-xs"
+          style={{ animationDelay: "0.28s" }}
+        >
+          B2B SaaS для инкубаторов и акселераторов. Тарифы по подписке, carry —
+          с побед.
+        </p>
+
         <div
           className="rise mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
           style={{ animationDelay: "0.34s" }}

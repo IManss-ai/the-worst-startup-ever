@@ -3,12 +3,18 @@ import Link from "next/link";
 export default function FinalCTA() {
   return (
     <section className="relative overflow-hidden border-y border-line">
+      {/* Hell-arena artwork, kept very dark so text stays readable */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-25"
+        style={{ backgroundImage: "url(/bg.webp)" }}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 60% 80% at 50% 110%, rgba(255,46,61,0.18), transparent 65%)",
+            "linear-gradient(rgba(8,7,10,0.88), rgba(8,7,10,0.82)), radial-gradient(ellipse 60% 80% at 50% 110%, rgba(255,46,61,0.18), transparent 65%)",
         }}
       />
       <div className="relative mx-auto max-w-6xl px-5 py-20 text-center sm:px-8 sm:py-28">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -16,15 +17,20 @@ export default function Nav() {
     <header className="sticky top-0 z-50 border-b border-line bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center bg-blood font-display text-[10px] font-extrabold text-white [clip-path:polygon(0_0,100%_0,100%_78%,78%_100%,0_100%)]">
-            HK
-          </span>
+          <Image
+            src="/logo.png"
+            alt="nFactorial"
+            width={40}
+            height={40}
+            priority
+            className="h-10 w-10 rounded-lg"
+          />
           <span className="flex flex-col leading-none">
             <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted">
               nFactorial
             </span>
             <span className="mt-0.5 font-display text-base font-bold tracking-[0.1em]">
-              HELL KOMBAT
+              NFAC KOMBAT
             </span>
           </span>
         </Link>

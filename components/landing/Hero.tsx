@@ -54,7 +54,7 @@ export default function Hero() {
           className="rise mx-auto mt-8 max-w-2xl text-center text-base leading-relaxed text-muted sm:text-lg"
           style={{ animationDelay: "0.22s" }}
         >
-          HELL KOMBAT — первая в мире платформа разрешения менторских
+          NFAC KOMBAT — первая в мире платформа разрешения менторских
           конфликтов. Менторы дерутся в 3D. Совет победителя становится
           юридически обязательным.
         </p>

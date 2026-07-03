@@ -1,8 +1,8 @@
-# nFactorial HELL KOMBAT — Mentorship Conflict Resolution Platform
+# NFAC KOMBAT — Mentorship Conflict Resolution Platform
 
 > Два ментора. Один совет. Ноль компромиссов.
 
-Хакатон **Worst Startup Ever** (nFactorial). Бренд: **nFactorial HELL KOMBAT**. Менторы инкубатора дерутся в 3D в
+Хакатон **Worst Startup Ever** (nFactorial). Бренд: **NFAC KOMBAT**. Менторы инкубатора дерутся в 3D в
 стиле Mortal Kombat; совет победителя становится «юридически обязательным».
 
 **Прод:** https://the-worst-startup-ever.vercel.app · Демо: `/fight`

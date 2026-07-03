@@ -46,13 +46,16 @@ function useProceduralPose(
     let lean = 0; // наклон корпуса вперёд(+)/назад(-)
     let y = 0;
     let fall = 0;
-    let spin = 0;
+    let spin = 0; // разворот корпуса вокруг вертикали
     let squash = 1;
+    let attacking = false;
 
     switch (sim.state) {
       case 'idle':
         y = Math.sin(t * 2.6) * 0.025;
         lean = Math.sin(t * 2.6 + 1) * 0.03;
+        // боевая стойка: лёгкое покачивание вперёд-назад
+        b.position.z = Math.sin(t * 1.7) * 0.02;
         break;
       case 'walk':
         y = Math.abs(Math.sin(t * 9)) * 0.07;
@@ -60,34 +63,58 @@ function useProceduralPose(
         b.rotation.y = Math.sin(t * 9) * 0.08;
         break;
       case 'punch': {
-        // windup назад → резкий выпад → возврат
-        const p = Math.min(sim.stateT / 0.42, 1);
-        lunge = p < 0.25 ? -0.12 : Math.sin(Math.min((p - 0.25) / 0.5, 1) * Math.PI) * 0.45;
-        lean = p < 0.25 ? -0.1 : 0.32;
-        squash = 1 - Math.sin(p * Math.PI) * 0.05;
+        // замах-присед → хлёсткий выпад с разворотом корпуса → возврат
+        attacking = true;
+        const p = Math.min(sim.stateT / 0.36, 1);
+        if (p < 0.22) {
+          const w = p / 0.22;
+          lunge = -0.2 * w;
+          lean = -0.15 * w;
+          spin = 0.3 * w; // корпус закручивается для удара
+          squash = 1 - 0.06 * w;
+        } else {
+          const q = Math.sin(Math.min((p - 0.22) / 0.55, 1) * Math.PI);
+          lunge = q * 0.8;
+          lean = q * 0.5;
+          spin = -0.55 * q; // раскрутка в удар
+          squash = 1 + q * 0.04;
+        }
         break;
       }
       case 'kick': {
-        const p = Math.min(sim.stateT / 0.66, 1);
-        lunge = p < 0.35 ? -0.18 : Math.sin(Math.min((p - 0.35) / 0.45, 1) * Math.PI) * 0.65;
-        lean = p < 0.35 ? -0.22 : 0.45;
-        y = p >= 0.35 ? Math.sin(Math.min((p - 0.35) / 0.45, 1) * Math.PI) * 0.18 : 0;
+        attacking = true;
+        const p = Math.min(sim.stateT / 0.58, 1);
+        if (p < 0.3) {
+          const w = p / 0.3;
+          lunge = -0.28 * w;
+          lean = -0.35 * w;
+          squash = 1 - 0.1 * w; // присел перед пинком
+        } else {
+          const q = Math.sin(Math.min((p - 0.3) / 0.55, 1) * Math.PI);
+          lunge = q * 1.05;
+          lean = q * 0.7;
+          y = q * 0.3;
+          spin = 0.4 * q;
+          squash = 1 + q * 0.06;
+        }
         break;
       }
       case 'special': {
         // прыжок с полным оборотом — «брейнрот-торнадо»
-        const p = Math.min(sim.stateT / 1.07, 1);
-        y = Math.sin(p * Math.PI) * 0.9;
-        spin = p * Math.PI * 2;
-        lunge = Math.sin(p * Math.PI) * 0.7;
-        squash = 1 + Math.sin(p * Math.PI) * 0.08;
+        attacking = true;
+        const p = Math.min(sim.stateT / 1.0, 1);
+        y = Math.sin(p * Math.PI) * 1.0;
+        spin = p * Math.PI * 2.5;
+        lunge = Math.sin(p * Math.PI) * 0.8;
+        squash = 1 + Math.sin(p * Math.PI) * 0.1;
         break;
       }
       case 'hit': {
-        lunge = -0.3;
-        lean = -0.28;
+        lunge = -0.42;
+        lean = -0.38;
         // дрожь от удара
-        b.position.z = (Math.random() - 0.5) * 0.06;
+        b.position.z = (Math.random() - 0.5) * 0.09;
+        spin = (Math.random() - 0.5) * 0.15;
         break;
       }
       case 'ko': {
@@ -95,6 +122,7 @@ function useProceduralPose(
         // отскок при падении
         const bounce = Math.max(0, Math.sin(Math.min(sim.stateT * 2.2, 1) * Math.PI * 2)) * 0.12;
         y = -0.1 * fall + bounce * (1 - fall);
+        spin = fall * 0.7; // доворот при падении — драматичнее
         break;
       }
       case 'win':
@@ -103,7 +131,8 @@ function useProceduralPose(
         break;
     }
 
-    const k = Math.min(1, dt * 16);
+    // атаки применяются резче, чем «дыхание»
+    const k = Math.min(1, dt * (attacking ? 28 : 16));
     b.position.x = THREE.MathUtils.lerp(b.position.x, lunge, k); // локальный X = «вперёд» после yaw
     b.position.y = THREE.MathUtils.lerp(b.position.y, y, k);
     b.rotation.z = THREE.MathUtils.lerp(b.rotation.z, -lean, k);

@@ -24,7 +24,15 @@ import {
 } from './engine';
 import { NetSession, type NetMessage, type NetSnapshot } from './net';
 import { useHud, fetchTrashTalk, localTrashLine } from './store';
-import { announce, sfx, speakTrashTalk, warmupAudio } from './audio';
+import {
+  announce,
+  playFaaah,
+  playMentorVoice,
+  playVictory,
+  sfx,
+  speakTrashTalk,
+  warmupAudio,
+} from './audio';
 
 const ROUND_TIME = 60;
 const WINS_TO_TAKE_MATCH = 2;
@@ -141,19 +149,25 @@ export default function FightScreen() {
       const matchOver = wins1 >= WINS_TO_TAKE_MATCH || wins2 >= WINS_TO_TAKE_MATCH;
 
       const winSim = winnerSide === 0 ? simA.current : simB.current;
+      const loseSim = winnerSide === 0 ? simB.current : simA.current;
       if (winSim.state !== 'ko') {
         winSim.state = 'win';
         winSim.stateT = 0;
       }
+      if (matchOver && loseSim.state !== 'ko') {
+        // фаталити: проигравший падает, даже если проиграл по таймеру
+        loseSim.state = 'ko';
+        loseSim.stateT = 0;
+      }
 
       s.set({
-        phase: 'roundEnd',
+        phase: matchOver ? 'fatality' : 'roundEnd',
         wins1,
         wins2,
-        announcement: matchOver ? 'ФАТАЛИТИ СОВЕТОМ' : `${winner.name} ПОБЕЖДАЕТ`,
+        announcement: matchOver ? 'FATALITY' : `${winner.name} ПОБЕЖДАЕТ`,
       });
       sfx.boom();
-      announce(matchOver ? 'Фаталити. Совет вступает в силу.' : `${winner.name} побеждает раунд`);
+      if (!matchOver) announce(`${winner.name} побеждает раунд`);
 
       s.set({ subtitle: localTrashLine() });
       void fetchTrashTalk(winner.name, loser.name, matchOver ? 'fatality' : 'round_end').then((line) => {
@@ -161,21 +175,41 @@ export default function FightScreen() {
         speakTrashTalk(line);
       });
 
-      setTimeout(() => {
-        if (matchOver) {
-          useHud.getState().set({ phase: 'matchEnd', announcement: '' });
-        } else {
-          startRound(useHud.getState().round + 1);
-        }
-      }, 3400);
+      setTimeout(
+        () => {
+          if (matchOver) {
+            useHud.getState().set({ phase: 'matchEnd', announcement: '' });
+          } else {
+            startRound(useHud.getState().round + 1);
+          }
+        },
+        matchOver ? 4600 : 3400,
+      );
     },
     [p1, p2, startRound],
   );
 
+  // fatality-звук на обеих машинах: у хоста фаза ставится в endRound,
+  // у гостя прилетает в снапшоте — эффект срабатывает и там, и там
+  useEffect(() => {
+    if (hud.phase !== 'fatality') return;
+    playVictory();
+    const winnerId = (useHud.getState().wins1 > useHud.getState().wins2 ? hud.p1Id : hud.p2Id) ?? '';
+    const t = setTimeout(() => {
+      if (!playMentorVoice(winnerId)) {
+        announce('Совет вступает в юридическую силу', { pitch: 0.2, rate: 0.85 });
+      }
+    }, 1100);
+    return () => clearTimeout(t);
+  }, [hud.phase, hud.p1Id, hud.p2Id]);
+
   // события движка -> звук + партиклы + конец раунда (хост/локально)
   const playEvents = useCallback((events: FightEvent[]) => {
     for (const e of events) {
-      if (e.type === 'whoosh') sfx.whoosh();
+      if (e.type === 'whoosh') {
+        sfx.whoosh();
+        if (e.kind === 'special') playFaaah(); // боевой клич на спешле
+      }
       if (e.type === 'hit') {
         if (e.kind === 'punch') sfx.punch();
         else if (e.kind === 'kick') sfx.kick();
@@ -184,6 +218,7 @@ export default function FightScreen() {
       }
       if (e.type === 'ko') {
         fxKO(e.x ?? 0);
+        playFaaah();
       }
     }
   }, []);
@@ -437,17 +472,42 @@ export default function FightScreen() {
         </div>
       </div>
 
+      {/* fatality: кровавая виньетка */}
+      {(hud.phase === 'fatality' || hud.phase === 'matchEnd') && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at center, transparent 35%, rgba(110,0,0,0.6) 100%)',
+            animation: 'fatalityPulse 1.4s ease-in-out infinite',
+          }}
+        />
+      )}
+
       {/* центральный баннер */}
       {hud.announcement && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p
-            className="animate-pulse text-center font-black uppercase text-red-500 drop-shadow-[0_0_25px_rgba(255,45,85,0.8)]"
-            style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}
+            className={`text-center font-black uppercase drop-shadow-[0_0_25px_rgba(255,45,85,0.8)] ${
+              hud.phase === 'fatality' ? 'text-amber-400' : 'animate-pulse text-red-500'
+            }`}
+            style={{
+              fontSize: hud.phase === 'fatality' ? 'clamp(3rem, 11vw, 8.5rem)' : 'clamp(2.5rem, 8vw, 6rem)',
+              ...(hud.phase === 'fatality'
+                ? { animation: 'fatalityText 0.9s cubic-bezier(0.2, 1.6, 0.4, 1) both', letterSpacing: '0.08em' }
+                : {}),
+            }}
           >
             {hud.announcement}
           </p>
         </div>
       )}
+
+      <style>{`
+        @keyframes fatalityPulse { 0%,100% { opacity: 0.75; } 50% { opacity: 1; } }
+        @keyframes fatalityText { 0% { transform: scale(3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes hpShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(4px); } }
+        @keyframes lowHpPulse { 0%,100% { box-shadow: 0 0 6px rgba(255,45,85,0.4); } 50% { box-shadow: 0 0 22px rgba(255,45,85,0.95); } }
+      `}</style>
 
       {/* трешток-субтитры */}
       {hud.subtitle && (
@@ -540,6 +600,21 @@ function HealthBar({
   align: 'left' | 'right';
   color: string;
 }) {
+  // «призрачный» след: белая полоса догоняет основную с задержкой — виден размер урона
+  const [ghost, setGhost] = useState(hp);
+  const [shakeKey, setShakeKey] = useState(0);
+  const prevHp = useRef(hp);
+
+  useEffect(() => {
+    if (hp < prevHp.current) setShakeKey((k) => k + 1);
+    if (hp > prevHp.current) setGhost(hp); // новый раунд — мгновенный сброс
+    prevHp.current = hp;
+    const t = setTimeout(() => setGhost(hp), 260);
+    return () => clearTimeout(t);
+  }, [hp]);
+
+  const low = hp <= 25;
+
   return (
     <div className={`flex-1 ${align === 'right' ? 'text-right' : ''}`}>
       <div className={`mb-1 flex items-center gap-2 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
@@ -550,11 +625,33 @@ function HealthBar({
           ))}
         </div>
       </div>
-      <div className="h-4 overflow-hidden rounded border border-white/20 bg-black/50">
+      <div
+        key={shakeKey}
+        className="relative h-4 overflow-hidden rounded border border-white/25 bg-black/60"
+        style={{
+          transform: 'skewX(-12deg)', // MK-стиль: скошенные полосы
+          animation: `${shakeKey ? 'hpShake 0.3s' : 'none'}${low ? ', lowHpPulse 0.8s ease-in-out infinite' : ''}`,
+        }}
+      >
+        {/* след урона */}
         <div
-          className={`h-full transition-all duration-200 ${align === 'right' ? 'ml-auto' : ''}`}
-          style={{ width: `${hp}%`, backgroundColor: color }}
+          className={`absolute inset-y-0 bg-amber-200/80 ${align === 'right' ? 'right-0' : 'left-0'}`}
+          style={{ width: `${ghost}%`, transition: 'width 0.55s cubic-bezier(0.2, 0, 0.2, 1)' }}
         />
+        {/* основная полоса */}
+        <div
+          className={`absolute inset-y-0 ${align === 'right' ? 'right-0' : 'left-0'}`}
+          style={{
+            width: `${hp}%`,
+            transition: 'width 0.12s ease-out',
+            background:
+              align === 'right'
+                ? `linear-gradient(270deg, ${color}, ${low ? '#ff8800' : color}cc)`
+                : `linear-gradient(90deg, ${color}, ${low ? '#ff8800' : color}cc)`,
+          }}
+        />
+        {/* блик сверху */}
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-white/15" />
       </div>
     </div>
   );

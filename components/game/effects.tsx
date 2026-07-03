@@ -8,6 +8,7 @@ import { Html } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { FighterSim } from './engine';
+import { useHud } from './store';
 
 interface SparkBurst {
   x: number;
@@ -69,19 +70,38 @@ export function CameraRig({
   useFrame((_, dt) => {
     const a = simA.current;
     const b = simB.current;
-    const mid = (a.x + b.x) / 2;
-    const dist = Math.abs(a.x - b.x);
+    const phase = useHud.getState().phase;
 
-    const targetX = THREE.MathUtils.clamp(mid * 0.6, -2, 2);
-    const targetZ = 4.1 + Math.min(dist * 0.5, 2.4);
-    const k = Math.min(1, dt * 3.5);
+    let targetX: number;
+    let targetY = 2.1;
+    let targetZ: number;
+    let lookY = 1.35;
+    let k = Math.min(1, dt * 3.5);
+
+    if (phase === 'fatality' || phase === 'matchEnd') {
+      // медленный наезд на победителя (тот, кто не в нокауте)
+      const winner = a.state === 'ko' ? b : a;
+      targetX = winner.x * 0.9;
+      targetY = 1.55;
+      targetZ = 2.9;
+      lookY = 1.25;
+      k = Math.min(1, dt * 1.6); // кинематографично, не рывком
+      look.current.x = THREE.MathUtils.lerp(look.current.x, winner.x, k);
+    } else {
+      const mid = (a.x + b.x) / 2;
+      const dist = Math.abs(a.x - b.x);
+      targetX = THREE.MathUtils.clamp(mid * 0.6, -2, 2);
+      targetZ = 4.1 + Math.min(dist * 0.5, 2.4);
+      look.current.x = THREE.MathUtils.lerp(look.current.x, targetX, k);
+    }
 
     fxBus.shake = Math.max(0, fxBus.shake - dt * 3);
     const s = fxBus.shake * 0.12;
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, k) + (Math.random() - 0.5) * s;
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 2.1, k) + (Math.random() - 0.5) * s;
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, k) + (Math.random() - 0.5) * s;
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, k);
-    look.current.set(THREE.MathUtils.lerp(look.current.x, targetX, k), 1.35, 0);
+    look.current.y = lookY;
+    look.current.z = 0;
     camera.lookAt(look.current);
   });
   return null;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type GamePhase = 'select' | 'intro' | 'fight' | 'roundEnd' | 'matchEnd';
+export type GamePhase = 'select' | 'intro' | 'fight' | 'roundEnd' | 'fatality' | 'matchEnd';
 export type GameMode = 'pvp' | 'cpu' | 'auto' | 'online';
 export type NetStatus = 'idle' | 'hosting' | 'joining' | 'connected' | 'error';
 

@@ -37,12 +37,13 @@ interface AttackSpec {
   damage: number;
   knockback: number;
   cooldown: number;
+  step: number; // скорость рывка вперёд во время атаки — удар «вкладывается» корпусом
 }
 
 const ATTACKS: Record<AttackKind, AttackSpec> = {
-  punch: { windup: 0.1, active: 0.12, recover: 0.2, range: 1.25, damage: 7, knockback: 0.35, cooldown: 0 },
-  kick: { windup: 0.22, active: 0.14, recover: 0.3, range: 1.7, damage: 13, knockback: 0.7, cooldown: 0 },
-  special: { windup: 0.42, active: 0.2, recover: 0.45, range: 2.4, damage: 22, knockback: 1.6, cooldown: 4 },
+  punch: { windup: 0.08, active: 0.12, recover: 0.16, range: 1.3, damage: 7, knockback: 0.4, cooldown: 0, step: 1.6 },
+  kick: { windup: 0.18, active: 0.14, recover: 0.26, range: 1.75, damage: 13, knockback: 0.8, cooldown: 0, step: 2.2 },
+  special: { windup: 0.38, active: 0.22, recover: 0.4, range: 2.4, damage: 22, knockback: 1.7, cooldown: 4, step: 3.0 },
 };
 
 const ARENA_HALF = 4.2;
@@ -122,6 +123,12 @@ function tickFighter(
 
   if (f.attack) {
     const phase = attackPhase(f);
+    // рывок корпусом вперёд: атака двигает бойца к противнику
+    if (phase === 'windup' || phase === 'active') {
+      const spec = ATTACKS[f.attack];
+      f.x += f.facing * spec.step * dt;
+      f.x = Math.min(ARENA_HALF, Math.max(-ARENA_HALF, f.x));
+    }
     if (phase === 'active' && !f.attackLanded) {
       const spec = ATTACKS[f.attack];
       const dist = Math.abs(foe.x - f.x);

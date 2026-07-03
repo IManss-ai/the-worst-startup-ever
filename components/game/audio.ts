@@ -112,10 +112,61 @@ export function speakTrashTalk(text: string) {
   });
 }
 
+// ---------- Файловые ассеты (голоса менторов, победный звук, faaah) ----------
+
+const fileCache: Record<string, HTMLAudioElement> = {};
+
+export function playFile(url: string, opts?: { volume?: number; rate?: number }) {
+  if (typeof window === 'undefined') return;
+  try {
+    const base = (fileCache[url] ??= new Audio(url));
+    const a = base.cloneNode() as HTMLAudioElement;
+    a.volume = opts?.volume ?? 1;
+    if (opts?.rate) a.playbackRate = opts.rate;
+    void a.play().catch(() => {
+      // автоплей заблокирован до первого клика — не страшно
+    });
+  } catch {
+    // файла нет / кодек не поддержан — тишина лучше падения
+  }
+}
+
+// у кого есть записанный голос — играем файл; у остальных остаётся TTS
+export const VOICE_MAP: Record<string, string> = {
+  diana: '/sfx/voice/diana.m4a',
+  dauren: '/sfx/voice/dauren.m4a',
+  bakhaudin: '/sfx/voice/bakhaudin.mp3',
+  tins: '/sfx/voice/tins.m4a',
+};
+
+export function playMentorVoice(mentorId: string): boolean {
+  const url = VOICE_MAP[mentorId];
+  if (!url) return false;
+  playFile(url, { volume: 1 });
+  return true;
+}
+
+export function playFaaah() {
+  playFile('/sfx/faaah.mp3', { volume: 0.9, rate: 0.95 + Math.random() * 0.15 });
+}
+
+export function playVictory() {
+  playFile('/sfx/victory.mp3', { volume: 1 });
+}
+
 // прогреваем голоса заранее (в Chrome список пустой до первого запроса)
 export function warmupAudio() {
   if (typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.getVoices();
   }
   audio();
+  // подгружаем файловые ассеты в кэш
+  ['/sfx/faaah.mp3', '/sfx/victory.mp3', ...Object.values(VOICE_MAP)].forEach((u) => {
+    if (!fileCache[u]) {
+      const a = new Audio();
+      a.preload = 'auto';
+      a.src = u;
+      fileCache[u] = a;
+    }
+  });
 }

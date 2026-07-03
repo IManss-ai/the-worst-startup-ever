@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { MENTORS, mentorById } from '@/lib/mentors';
+import { playMentorVoice } from './audio';
 import { useHud, type GameMode } from './store';
 
 const MODES: { id: GameMode; label: string; hint: string }[] = [
@@ -31,6 +33,7 @@ export default function CharacterSelect({
   const onlineReady = netStatus === 'connected';
 
   function pick(id: string) {
+    playMentorVoice(id); // у кого есть записанный голос — представляется сам
     if (isOnline) {
       if (onlineReady) onPickOnline(id);
       return;
@@ -63,7 +66,10 @@ export default function CharacterSelect({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#0b0910] px-4 py-8 text-white">
-      <p className="text-xs uppercase tracking-[0.5em] text-red-500">nFactorial</p>
+      <div className="flex items-center gap-3">
+        <Image src="/logo.png" alt="nFactorial" width={44} height={44} className="rounded-md" priority />
+        <p className="text-xs uppercase tracking-[0.5em] text-red-500">nFactorial presents</p>
+      </div>
       <h1
         className="text-center font-black uppercase leading-none tracking-tight"
         style={{
@@ -71,7 +77,7 @@ export default function CharacterSelect({
           textShadow: '0 0 40px rgba(255,45,85,0.45)',
         }}
       >
-        HELL KOMBAT
+        NFAC KOMBAT
       </h1>
       <p className="max-w-xl text-center text-sm text-white/50">
         Два ментора дали вам противоположные советы. Платформа определит, чей совет становится{' '}

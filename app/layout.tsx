@@ -18,7 +18,7 @@ const jbMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "nFactorial HELL KOMBAT — Разрешение менторских конфликтов",
+  title: "NFAC KOMBAT — Разрешение менторских конфликтов",
   description:
     "Первая в мире платформа разрешения менторских конфликтов. Два ментора дерутся в 3D — совет победителя становится юридически обязательным.",
 };

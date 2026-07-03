@@ -13,7 +13,7 @@ const testimonials = [
   },
   {
     quote:
-      "HELL KOMBAT закрыл наш главный blocker на пути к product-market fit: необходимость думать.",
+      "NFAC KOMBAT закрыл наш главный blocker на пути к product-market fit: необходимость думать.",
     name: "Тимур",
     role: "фаундер AI-стартапа",
   },

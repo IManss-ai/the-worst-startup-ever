@@ -53,9 +53,17 @@ export class NetSession {
     const s = new NetSession('host', code);
     const { default: Peer } = await import('peerjs');
     await new Promise<void>((resolve, reject) => {
-      s.peer = new Peer(peerId(code));
+      s.peer = new Peer(peerId(code), PEER_OPTIONS);
       s.peer.on('open', () => resolve());
-      s.peer.on('error', (e: Error) => reject(e));
+      s.peer.on('error', (e: Error) => reject(humanizeError(e)));
+    });
+    // брокер иногда рвёт соединение — тихо переподключаемся, чтобы код комнаты жил
+    s.peer.on('disconnected', () => {
+      try {
+        s.peer?.reconnect();
+      } catch {
+        // peer уже уничтожен
+      }
     });
     s.peer.on('connection', (conn: PeerConn) => {
       if (s.conn) {
@@ -71,23 +79,43 @@ export class NetSession {
     const s = new NetSession('guest', code.toUpperCase().trim());
     const { default: Peer } = await import('peerjs');
     await new Promise<void>((resolve, reject) => {
-      s.peer = new Peer();
+      s.peer = new Peer(PEER_OPTIONS);
       s.peer.on('open', () => resolve());
-      s.peer.on('error', (e: Error) => reject(e));
+      s.peer.on('error', (e: Error) => reject(humanizeError(e)));
     });
-    const conn = s.peer.connect(peerId(s.code), { reliable: false });
-    await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('Не удалось подключиться — проверь код комнаты')), 10000);
-      conn.on('open', () => {
-        clearTimeout(t);
-        resolve();
+
+    const attempt = () =>
+      new Promise<PeerConn>((resolve, reject) => {
+        const conn = s.peer.connect(peerId(s.code), { reliable: false });
+        const t = setTimeout(
+          () => reject(new Error('Не удалось соединиться — если вы в разных сетях, попробуйте раздать хотспот')),
+          15000,
+        );
+        const onPeerError = (e: Error & { type?: string }) => {
+          if (e.type === 'peer-unavailable') {
+            clearTimeout(t);
+            reject(new Error('Комната не найдена — проверь код (хост должен держать вкладку открытой)'));
+          }
+        };
+        s.peer.on('error', onPeerError);
+        conn.on('open', () => {
+          clearTimeout(t);
+          s.peer.off?.('error', onPeerError);
+          resolve(conn);
+        });
+        conn.on('error', (e: Error) => {
+          clearTimeout(t);
+          reject(humanizeError(e));
+        });
       });
-      conn.on('error', (e: Error) => {
-        clearTimeout(t);
-        reject(e);
-      });
-    });
-    s.attach(conn);
+
+    try {
+      s.attach(await attempt());
+    } catch (e) {
+      // «комната не найдена» — не ретраим (код неверный); сетевые сбои — одна повторная попытка
+      if (e instanceof Error && e.message.includes('не найдена')) throw e;
+      s.attach(await attempt());
+    }
     return s;
   }
 
@@ -130,6 +158,49 @@ export class NetSession {
     }
     this.connected = false;
     this.handlers.clear();
+  }
+}
+
+// STUN для обычных сетей + бесплатный TURN-релей (open relay) для случаев,
+// когда ноутбуки в разных сетях за строгими NAT — иначе WebRTC не пробьётся.
+const PEER_OPTIONS = {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:openrelay.metered.ca:80' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+    ],
+  },
+};
+
+function humanizeError(e: Error & { type?: string }): Error {
+  switch (e.type) {
+    case 'peer-unavailable':
+      return new Error('Комната не найдена — проверь код (хост должен держать вкладку открытой)');
+    case 'network':
+    case 'server-error':
+    case 'socket-error':
+    case 'socket-closed':
+      return new Error('Нет связи с сервером комнат — проверь интернет и попробуй ещё раз');
+    case 'unavailable-id':
+      return new Error('Код комнаты занят — создай новую комнату');
+    default:
+      return e;
   }
 }
 

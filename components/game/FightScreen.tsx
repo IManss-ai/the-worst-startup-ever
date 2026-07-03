@@ -204,24 +204,41 @@ export default function FightScreen() {
   }, [hud.phase, hud.p1Id, hud.p2Id]);
 
   // события движка -> звук + партиклы + конец раунда (хост/локально)
-  const playEvents = useCallback((events: FightEvent[]) => {
-    for (const e of events) {
-      if (e.type === 'whoosh') {
-        sfx.whoosh();
-        if (e.kind === 'special') playFaaah(); // боевой клич на спешле
-      }
-      if (e.type === 'hit') {
-        if (e.kind === 'punch') sfx.punch();
-        else if (e.kind === 'kick') sfx.kick();
-        else sfx.special();
-        fxHit(e.x ?? 0, e.damage ?? 5, e.kind);
-      }
-      if (e.type === 'ko') {
-        fxKO(e.x ?? 0);
-        playFaaah();
-      }
-    }
+  // голос ментора в бою: атакующий «комментирует» удачные удары (с кулдауном, чтобы не спамить)
+  const voiceCooldown = useRef<Record<string, number>>({});
+  const tryCombatVoice = useCallback((mentorId: string, chance: number) => {
+    const now = performance.now();
+    if ((voiceCooldown.current[mentorId] ?? 0) > now) return;
+    if (Math.random() > chance) return;
+    if (playMentorVoice(mentorId)) voiceCooldown.current[mentorId] = now + 3500;
   }, []);
+
+  const playEvents = useCallback(
+    (events: FightEvent[]) => {
+      for (const e of events) {
+        const attackerId = e.attacker === 0 ? p1.id : p2.id;
+        if (e.type === 'whoosh') {
+          sfx.whoosh();
+          if (e.kind === 'special') {
+            playFaaah(); // боевой клич на спешле
+            tryCombatVoice(attackerId, 1);
+          }
+        }
+        if (e.type === 'hit') {
+          if (e.kind === 'punch') sfx.punch();
+          else if (e.kind === 'kick') sfx.kick();
+          else sfx.special();
+          fxHit(e.x ?? 0, e.damage ?? 5, e.kind);
+          tryCombatVoice(attackerId, e.kind === 'punch' ? 0.35 : 0.55);
+        }
+        if (e.type === 'ko') {
+          fxKO(e.x ?? 0);
+          playFaaah();
+        }
+      }
+    },
+    [p1.id, p2.id, tryCombatVoice],
+  );
 
   const handleEvents = useCallback(
     (events: FightEvent[]) => {
@@ -463,12 +480,12 @@ export default function FightScreen() {
       {/* HUD */}
       <div className="pointer-events-none absolute inset-x-0 top-0 p-4">
         <div className="mx-auto flex max-w-5xl items-start gap-4">
-          <HealthBar name={p1.name} hp={hud.hp1} wins={hud.wins1} align="left" color="#0a84ff" />
+          <HealthBar mentor={p1} hp={hud.hp1} wins={hud.wins1} align="left" color="#0a84ff" />
           <div className="min-w-16 pt-1 text-center">
             <p className="text-3xl font-black text-white tabular-nums">{hud.timer}</p>
             <p className="text-[10px] uppercase tracking-widest text-white/40">раунд {hud.round}</p>
           </div>
-          <HealthBar name={p2.name} hp={hud.hp2} wins={hud.wins2} align="right" color="#ff2d55" />
+          <HealthBar mentor={p2} hp={hud.hp2} wins={hud.wins2} align="right" color="#ff2d55" />
         </div>
       </div>
 
@@ -588,18 +605,19 @@ export default function FightScreen() {
 }
 
 function HealthBar({
-  name,
+  mentor,
   hp,
   wins,
   align,
   color,
 }: {
-  name: string;
+  mentor: ReturnType<typeof mentorById>;
   hp: number;
   wins: number;
   align: 'left' | 'right';
   color: string;
 }) {
+  const name = mentor.name;
   // «призрачный» след: белая полоса догоняет основную с задержкой — виден размер урона
   const [ghost, setGhost] = useState(hp);
   const [shakeKey, setShakeKey] = useState(0);
@@ -618,6 +636,25 @@ function HealthBar({
   return (
     <div className={`flex-1 ${align === 'right' ? 'text-right' : ''}`}>
       <div className={`mb-1 flex items-center gap-2 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+        {/* аватар бойца рядом с ником */}
+        {mentor.hasPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/avatars/${mentor.id}.webp`}
+            alt={name}
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded border-2 object-cover shadow-lg"
+            style={{ borderColor: color }}
+          />
+        ) : (
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded border-2 text-lg font-black text-white"
+            style={{ borderColor: color, backgroundColor: mentor.color }}
+          >
+            {name.charAt(0)}
+          </div>
+        )}
         <p className="truncate text-sm font-black uppercase text-white">{name}</p>
         <div className="flex gap-1">
           {Array.from({ length: 2 }).map((_, i) => (

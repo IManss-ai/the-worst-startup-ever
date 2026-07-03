@@ -5,6 +5,7 @@
 export interface Mentor {
   id: string;
   name: string;
+  hasPhoto: boolean; // public/avatars/<id>.webp
   title: string; // venture-пародийный титул
   special: string; // название спешл-атаки
   color: string; // акцент бойца (UI + подсветка)
@@ -14,6 +15,7 @@ export interface Mentor {
 export const MENTORS: Mentor[] = [
   {
     id: 'arman',
+    hasPhoto: true,
     name: 'АРМАН',
     title: 'Chief Vision Officer',
     special: 'Пивот-кик',
@@ -22,6 +24,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'amina',
+    hasPhoto: true,
     name: 'АМИНА',
     title: 'Growth-шаман',
     special: 'Виральная петля',
@@ -30,6 +33,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'asel',
+    hasPhoto: false,
     name: 'АСЕЛЬ',
     title: 'Product Visionary',
     special: 'Roadmap Rage',
@@ -38,6 +42,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'dauren',
+    hasPhoto: true,
     name: 'ДАУРЕН',
     title: 'Ex-FAANG (2 недели стажировки)',
     special: 'Систем-дизайн слэм',
@@ -46,6 +51,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'bakhaudin',
+    hasPhoto: true,
     name: 'БАХАУДИН',
     title: 'Angel с чужими деньгами',
     special: 'Term Sheet Slam',
@@ -54,6 +60,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'jafar',
+    hasPhoto: true,
     name: 'ДЖАФАР',
     title: 'AI-евангелист',
     special: 'Промпт-инжект',
@@ -62,6 +69,7 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'diana',
+    hasPhoto: true,
     name: 'ДИАНА',
     title: 'Brand & Storytelling',
     special: 'Нарратив-шок',
@@ -70,7 +78,8 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'bazra',
-    name: 'БАЗРА',
+    hasPhoto: true,
+    name: 'БАХРЕДИН',
     title: 'Unit-экономика инквизитор',
     special: 'Кэшфлоу-разрыв',
     color: '#64d2ff',
@@ -78,7 +87,8 @@ export const MENTORS: Mentor[] = [
   },
   {
     id: 'tins',
-    name: 'ТИНС',
+    hasPhoto: true,
+    name: 'ДАУРЕН ТИНС',
     title: 'Наставник поколения Z',
     special: 'Брейнрот-волна',
     color: '#30d158',

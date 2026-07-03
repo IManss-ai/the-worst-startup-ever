@@ -86,10 +86,16 @@ export class NetSession {
 
     const attempt = () =>
       new Promise<PeerConn>((resolve, reject) => {
-        const conn = s.peer.connect(peerId(s.code), { reliable: false });
+        // reliable: потеря пакета с ударом = удар не случился; на LAN ретрансмит дешевле
+        const conn = s.peer.connect(peerId(s.code), { reliable: true });
         const t = setTimeout(
-          () => reject(new Error('Не удалось соединиться — если вы в разных сетях, попробуйте раздать хотспот')),
-          15000,
+          () =>
+            reject(
+              new Error(
+                'Соединение не установилось. Подключите ОБА ноутбука к одному Wi-Fi (или раздайте точку доступа с телефона) и попробуйте снова',
+              ),
+            ),
+          12000,
         );
         const onPeerError = (e: Error & { type?: string }) => {
           if (e.type === 'peer-unavailable') {
@@ -161,32 +167,25 @@ export class NetSession {
   }
 }
 
-// STUN для обычных сетей + бесплатный TURN-релей (open relay) для случаев,
-// когда ноутбуки в разных сетях за строгими NAT — иначе WebRTC не пробьётся.
-const PEER_OPTIONS = {
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:openrelay.metered.ca:80' },
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-    ],
-  },
-};
+// ВАЖНО: мёртвые TURN-серверы в iceServers отравляют ICE-переговоры таймаутами
+// (openrelay.metered.ca закрылся — проверено, хост недостижим). Держим только
+// живые STUN (проверены STUN-запросом). TURN можно добавить через env без кода:
+// NEXT_PUBLIC_TURN_URL / NEXT_PUBLIC_TURN_USER / NEXT_PUBLIC_TURN_PASS
+// (бесплатные 20GB даёт https://www.metered.ca/stun-turn после регистрации).
+const iceServers: RTCIceServer[] = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+];
+if (process.env.NEXT_PUBLIC_TURN_URL && process.env.NEXT_PUBLIC_TURN_USER) {
+  iceServers.push({
+    urls: process.env.NEXT_PUBLIC_TURN_URL,
+    username: process.env.NEXT_PUBLIC_TURN_USER,
+    credential: process.env.NEXT_PUBLIC_TURN_PASS ?? '',
+  });
+}
+
+const PEER_OPTIONS = { config: { iceServers } };
 
 function humanizeError(e: Error & { type?: string }): Error {
   switch (e.type) {

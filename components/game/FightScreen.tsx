@@ -235,7 +235,11 @@ export default function FightScreen() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#0b0910]">
-      <Canvas shadows camera={{ position: [0, 2.4, 7.4], fov: 45 }}>
+      <Canvas
+        shadows
+        camera={{ position: [0, 2.2, 6.6], fov: 45 }}
+        onCreated={({ camera }) => camera.lookAt(0, 1.4, 0)}
+      >
         <Arena />
         <Fighter mentor={p1} simRef={simA} hasModel={!!modelMap[p1.id]} />
         <Fighter mentor={p2} simRef={simB} hasModel={!!modelMap[p2.id]} />

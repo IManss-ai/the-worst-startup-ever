@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #08070a;
+  --foreground: #f0ede6;
+  --blood: #ff2e3d;
+  --ember: #ff7a3d;
+  --muted: #8b8694;
+  --line: rgba(240, 237, 230, 0.09);
+  --panel: #0e0d12;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-blood: var(--blood);
+  --color-ember: var(--ember);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-panel: var(--panel);
+  --font-display: var(--font-unbounded);
+  --font-sans: var(--font-golos);
+  --font-mono: var(--font-jb-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-golos), system-ui, sans-serif;
 }
+
+::selection {
+  background: var(--blood);
+  color: #fff;
+}
+
+/* Fine grain overlay for atmosphere */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Health bars in the hero VS panel */
+@keyframes hp-left {
+  0%, 12% { width: 88%; }
+  38% { width: 61%; }
+  55% { width: 64%; }
+  78% { width: 37%; }
+  92%, 100% { width: 88%; }
+}
+@keyframes hp-right {
+  0%, 12% { width: 84%; }
+  30% { width: 72%; }
+  52% { width: 44%; }
+  70% { width: 49%; }
+  86% { width: 18%; }
+  100% { width: 84%; }
+}
+.hp-left { animation: hp-left 7s ease-in-out infinite; }
+.hp-right { animation: hp-right 7s ease-in-out infinite; }
+
+@keyframes vs-flicker {
+  0%, 100% { opacity: 1; text-shadow: 0 0 24px rgba(255, 46, 61, 0.9), 0 0 80px rgba(255, 46, 61, 0.4); }
+  50% { opacity: 0.82; text-shadow: 0 0 10px rgba(255, 46, 61, 0.6), 0 0 40px rgba(255, 46, 61, 0.25); }
+}
+.vs-flicker { animation: vs-flicker 2.4s ease-in-out infinite; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  opacity: 0;
+  animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
